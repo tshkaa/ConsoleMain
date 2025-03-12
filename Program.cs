@@ -28,7 +28,7 @@ class Program
         }
     }
     
-    static List<Task> tasks = new List<Task>();
+    static List<Task> _tasks = new List<Task>();
     
     static void Main(string[] args)
     {
@@ -45,7 +45,8 @@ class Program
             Console.WriteLine("6. Показать невыполненные задачи");
             Console.WriteLine("7. Сохранить данные в файл");
             Console.WriteLine("8. Загрузить данные из файла");
-            Console.WriteLine("9. Выйти");
+            Console.WriteLine("9. Загрузить данные с последней сессии");
+            Console.WriteLine("10. Выйти");
             Console.WriteLine("----------------------------------");
             Console.Write("Выберите действие: ");
 
@@ -78,6 +79,11 @@ class Program
                     LoadTasks();
                     break;
                 case "9":
+                    LoadLastTasks();
+                    break;
+                case "10":
+                    string json = JsonConvert.SerializeObject(_tasks, Formatting.Indented);
+                    File.WriteAllText("lastTasks.json", json);
                     return;
                 default:
                     Console.WriteLine("Некорректный ввод. Попробуйте снова.\n");
@@ -97,7 +103,7 @@ class Program
         Console.Write("Введите описание: ");
         string description = Console.ReadLine();
         
-        tasks.Add(new Task(title, description));
+        _tasks.Add(new Task(title, description));
         Console.Clear();
         Console.WriteLine("Задача успешно добавлена.");
     }
@@ -106,17 +112,15 @@ class Program
     {
         Console.Clear();
         
-        if (tasks.Count == 0)
+        if (_tasks.Count == 0)
         {
             Console.WriteLine("Задач нет.");
-            Thread.Sleep(1000);
-            Console.Clear();
             return;
         }
         
-        for (int i = 0; i < tasks.Count; i++)
+        for (int i = 0; i < _tasks.Count; i++)
         {
-            Console.WriteLine($"{i + 1}. {tasks[i]}");
+            Console.WriteLine($"{i + 1}. {_tasks[i]}");
         }
     }
 
@@ -127,9 +131,9 @@ class Program
         Console.WriteLine("----------------------------------");
         Console.Write("Введите номер задачи: ");
 
-        if (int.TryParse(Console.ReadLine(), out int index) && index > 0 && index <= tasks.Count)
+        if (int.TryParse(Console.ReadLine(), out int index) && index > 0 && index <= _tasks.Count)
         {
-            tasks[index - 1].IsCompleted = true;
+            _tasks[index - 1].IsCompleted = true;
             Console.Clear();
             Console.WriteLine("Задача отмечена как выполненная.");
         }
@@ -147,9 +151,9 @@ class Program
         Console.WriteLine("----------------------------------");
         Console.Write("Введите номер задачи: ");
         
-        if (int.TryParse(Console.ReadLine(), out int index) && index > 0 && index <= tasks.Count)
+        if (int.TryParse(Console.ReadLine(), out int index) && index > 0 && index <= _tasks.Count)
         {
-            tasks.RemoveAt(index - 1);
+            _tasks.RemoveAt(index - 1);
             
             Console.WriteLine("Задача удалена.");
         }
@@ -162,7 +166,7 @@ class Program
 
     static void ShowCompleted()
     {
-        var completed = tasks.Where(t => t.IsCompleted).ToList();
+        var completed = _tasks.Where(t => t.IsCompleted).ToList();
         
         Console.Clear();
         
@@ -180,7 +184,7 @@ class Program
 
     static void ShowNCompleted()
     {
-        var ncompleted = tasks.Where(t => !t.IsCompleted).ToList();
+        var ncompleted = _tasks.Where(t => !t.IsCompleted).ToList();
 
         Console.Clear();
         
@@ -199,26 +203,40 @@ class Program
     static void SaveTasks()
     {
         Console.Clear();
+        Console.Write("Введите название файла, в который необходимо выгрузить данные: ");
+        string fileName = Console.ReadLine();
         
-        string json = JsonConvert.SerializeObject(tasks, Formatting.Indented);
-        File.WriteAllText("tasks.json", json);
-        Console.WriteLine("Файлы сохранены (tasks.json).\n");
+        string json = JsonConvert.SerializeObject(_tasks, Formatting.Indented);
+        File.WriteAllText($"{fileName}.json", json);
+        Console.WriteLine($"Файлы сохранены ({fileName}.json).");
     }
 
     static void LoadTasks()
     {
         Console.Clear();
+
+        Console.WriteLine("Введите название файла, из которого необходимо выгрузить данные: ");
+        string fileName = Console.ReadLine();
         
-        if (File.Exists("tasks.json"))
+        if (File.Exists($"{fileName}.json"))
         {
-            string json = File.ReadAllText("tasks.json");
-            tasks = JsonConvert.DeserializeObject<List<Task>>(json);
+            string json = File.ReadAllText($"{fileName}.json");
+            _tasks = JsonConvert.DeserializeObject<List<Task>>(json);
             Console.WriteLine("Задачи успешно импортированы.\n");
         }
         else
         {
-            Console.WriteLine("Файл не найден.\n");
+            Console.WriteLine("Файл не найден.");
         }
+    }
+
+    static void LoadLastTasks()
+    {
+        Console.Clear();
+        
+        string json = File.ReadAllText($"lastTasks.json");
+        _tasks = JsonConvert.DeserializeObject<List<Task>>(json);
+        Console.WriteLine("Задачи успешно импортированы.\n");
     }
 
     static void ExitToMenu()
